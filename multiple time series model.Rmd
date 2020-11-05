@@ -1,42 +1,89 @@
 ---
-title: "Untitled"
-author: "Team Algoritma"
-date: "10/22/2020"
-output: html_document
+title: ""
+author: "Ajeng Prastiwi, Allissa Rahman"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# clear-up the environment
+rm(list = ls())
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+options(scipen = 99)
 ```
 
-```{r}
-library(tidymodels)
+# Introduction
+
+## Multiple Time Series
+
+## The purpose of `forecastML`
+
+## Learning Objectives
+
+The goal of this article is to help you:
+-
+-
+-
+
+## Library
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(padr)
+library(xgboost)
+library(forecastML)
 ```
 
+# Data Preprocess using `forecastML`
+
+## Lagged Features
+
+## Nested cross validation
+
+# Model Training
+
+## XGBoost
+
+## ....
+
+# Model Performance
+
+# Conslusion
+
+# Reference
 
 ```{r}
 walmart <- read_csv("data/train_walmart.csv")
 head(walmart)
 ```
 ```{r}
-walmart_clean <- walmart %>% 
+data_clean <- walmart %>% 
                  mutate(Date = ymd(Date)) %>% 
                  filter(Store %in% 1:5) %>%
                  group_by(Store,Date) %>% 
                  summarise(Sales = mean(Weekly_Sales)) %>% 
                  ungroup()
 
-min_date <- min(walmart_clean$Date)
-max_date <- max(walmart_clean$Date)
-```
-```{r}
-data_clean <- walmart_clean %>% 
-              group_by(Store) %>% 
-              pad(start_val = min_date,end_val = max_date) %>% 
-              ungroup()
-
-colSums(is.na(data_clean))
-
+min_date <- min(data_clean$Date)
+max_date <- max(data_clean$Date)
 ```
 
 ```{r}
@@ -53,14 +100,13 @@ data_walmart <- forecastML::fill_gaps(data_clean,
                                       date_col = 2,
                                       frequency = "1 week", 
                                       groups = "Store")
-head(data_walmart)
 ```
 
+observasi data_clean dan data_walmart sama artinya tidak ada data yang hilang
 ```{r}
-data_walmart %>% 
-  filter(Store == 1)
+nrow(data_clean)
+nrow(data_walmart)
 ```
-
 
 ```{r}
 data_train <- forecastML::create_lagged_df(data_walmart, 
@@ -71,10 +117,11 @@ data_train <- forecastML::create_lagged_df(data_walmart,
                                            dates = data_walmart$Date, 
                                            frequency = "1 week",
                                            dynamic_features = c("week","month"),
-                                           groups = "Store",
-                                           use_future = FALSE)
+                                           groups = "Store"
+                                           )
 head(data_train)
 ```
+
 
 ```{r}
 plot(data_train)+geom_tile()
@@ -90,56 +137,52 @@ plot(windows, data_train) + theme(legend.position = "none")
 
 ```
 
+
 ```{r}
 plot(windows, 
-     data_train, 
-     group_filter = "Store == 1") + 
+     data_train,
+     group_filter = "Store == 1"
+     ) + 
   theme(legend.position = "none")
 ```
 
-
 ```{r}
-# The value of outcome_col can also be set in train_model() with train_model(outcome_col = 1).
 model_function <- function(data, outcome_col = 1) {
   
-  # xgboost cannot handle missing outcomes data.
-  data <- data[!is.na(data[, outcome_col]), ]
+data <- data[!is.na(data[, 1]), ]
 
-  indices <- 1:nrow(data)
+data_train <- data %>% 
+              head(-4*6)
+data_test <- data %>% 
+             tail(4*6)
+
+# convert data to matrix
+train_matrix <- data.matrix(data_train[,-1, drop = F])
+test_matrix <- data.matrix(data_test[,-1, drop = F])
+
+# conver data to Dmatrix
+dtrain <- xgb.DMatrix(data = train_matrix, 
+                      label = as.matrix(data_train[,1, drop =F]))
+dtest <- xgb.DMatrix(data = test_matrix, 
+                     label = as.matrix(data_test[,1, drop =F]))
+
+params <- list("objective" = "reg:squarederror")
+watchlist <- list(train = dtrain, test = dtest)
   
-  set.seed(100)
-  train_indices <- sample(1:nrow(data), ceiling(nrow(data) * .8), replace = FALSE)
-  test_indices <- indices[!(indices %in% train_indices)]
-
-  data_train <- xgboost::xgb.DMatrix(data = as.matrix(data[train_indices, 
-                                                           -(outcome_col), drop = FALSE]),
-                                     label = as.matrix(data[train_indices, 
-                                                            outcome_col, drop = FALSE]))
-
-  data_test <- xgboost::xgb.DMatrix(data = as.matrix(data[test_indices, 
-                                                          -(outcome_col), drop = FALSE]),
-                                    label = as.matrix(data[test_indices, 
-                                                           outcome_col, drop = FALSE]))
-
-  params <- list("objective" = "reg:linear")
-  watchlist <- list(train = data_train, test = data_test)
-  
-  set.seed(100)
-  model <- xgboost::xgb.train(data = data_train, params = params, 
-                              max.depth = 8, nthread = 2, nrounds = 30,
-                              metrics = "rmse", verbose = 0, 
-                              early_stopping_rounds = 5, 
-                              watchlist = watchlist)
+set.seed(100)
+model <- xgboost::xgb.train(data = dtrain, 
+                            params = params, 
+                            max.depth = 8, 
+                            nthread = 2, 
+                            nrounds = 30,
+                            metrics = "rmse",
+                            verbose = 0, 
+                            early_stopping_rounds = 5, 
+                            watchlist = watchlist)
 
   return(model)
 }
 ```
-
-```{r}
-head(data_train)
-```
-
-
 
 ```{r}
 model_results_cv <- forecastML::train_model(lagged_df = data_train,
@@ -147,13 +190,179 @@ model_results_cv <- forecastML::train_model(lagged_df = data_train,
                                             model_name = "xgboost",
                                             model_function = model_function, 
                                             use_future = FALSE)
+```
 
-?HoltWinters
+
+```{r}
+summary(model_results_cv$horizon_1$window_1$model)
+```
+
+```{r}
+prediction_function <- function(model, data_features) {
+  x <- xgb.DMatrix(data = data.matrix(data_features))
+  data_pred <- data.frame("y_pred" = predict(model, x))  
+  return(data_pred)
+}
+```
+
+
+```{r}
+data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train)
+```
+
+```{r}
+plot(data_pred_cv)
+```
+
+```{r}
+plot(data_pred_cv, facet = group ~ horizon, windows = 1)
+```
+
+
+```{r}
+data_error <- forecastML::return_error(data_pred_cv)
+
+plot(data_error, type = "window", metric = "mape")
+```
+
+```{r}
+data_forecast <- forecastML::create_lagged_df(data_walmart, 
+                                              type = "forecast", 
+                                              outcome_col = 3,
+                                              horizons = c(1,4,12), 
+                                              lookback = 1:48,
+                                              dates = data_walmart$Date, 
+                                              frequency = "1 week",
+                                              dynamic_features = c("week","month"),
+                                              groups = "Store")
+head(data_forecast)
+```
+
+
+```{r}
+data_forecasts <- predict(model_results_cv, 
+                          prediction_function = list(prediction_function), 
+                          data = data_forecast)
+```
+
+```{r}
+plot(data_forecasts)
+```
+
+```{r}
+windows <- forecastML::create_windows(data_train, window_length = 0)
+
+plot(windows, data_train) + theme(legend.position = "none")
+```
+
+```{r}
+model_results_no_cv <- forecastML::train_model(lagged_df = data_train, 
+                                               windows = windows,
+                                               model_name = "xgboost",
+                                               model_function = model_function,
+                                               use_future = FALSE)
+```
+
+```{r}
+data_forecasts <- predict(model_results_no_cv, prediction_function = list(prediction_function), data = data_forecast)
+head(data_forecasts)
+```
+
+
+```{r}
+data_combined <- forecastML::combine_forecasts(data_forecasts)
+
+# Plot a background dataset of actuals using the most recent data.
+data_actual <- data_walmart %>% 
+               filter(Date >= "2012-11-02")
+actual_indices <- data_walmart %>% 
+                 filter(Date >= "2012-11-02") %>% 
+                 select(Date)
+
+# Plot all final forecasts plus historical data.
+plot(data_combined, data_actual = data_actual, actual_indices = actual_indices)
+# masih error karena seharusnya yg di forecast itu data test nya, tanggal nya belum sesuai
+
+```
+
+```{r}
+range(data_walmart$Date)
+range(data_combined$forecast_period)
 ```
 
 
 
+## Random Forest
+
+
+```{r}
+data_train <- forecastML::create_lagged_df(data_walmart, 
+                                           type = "train", 
+                                           outcome_col = 3,
+                                           horizons = c(1,4,12),
+                                           lookback = 1:48,
+                                           dates = data_walmart$Date, 
+                                           frequency = "1 week",
+                                           dynamic_features = c("week","month"),
+                                           #groups = "Store"
+                                           )
+head(data_train)
+```
+
+
+```{r}
+model_rf <- function(data, outcome_cols = 1) {
+   outcome_names <- names(data)[outcome_cols]
+  model_formula <- formula(paste0(outcome_names,  "~ ."))
+
+  model <- randomForest::randomForest(formula = model_formula,
+                                      data = data, 
+                                      ntree = 200)
+  return(model) 
+}
+```
+
+
+```{r}
+model_results_rf <- forecastML::train_model(lagged_df = data_train, windows, 
+                                           model_rf, model_name = "RF",
+                                           use_future = F)
+```
+
+```{r}
+prediction_rf <- function(model, data_features) {
+
+  data_pred <- data.frame("y_pred" = predict(model, data_features))
+  return(data_pred)
+}
+data_results <- predict(model_results_rf, 
+                        prediction_function = list(prediction_rf), 
+                        data = data_train)
+```
+
+```{r}
+data_results$Sales_pred <- round(data_results$Sales_pred,0)
+head(data_results)
+```
+```{r}
+MLmetrics::MAPE(y_pred = data_results$Sales_pred,y_true = data_results$Sales)
+```
+```{r}
+ggplot(data = data_results,mapping = aes(x = date_indices, y = Sales)) +
+  geom_line(col = "red")+
+  geom_line(data = data_results,mapping = aes(x = date_indices, y = Sales_pred), col = "blue")
+```
+
+```{r}
+plot(data_results, type = "prediction", horizons = c(1,4,12))
+```
+
+
+
+
 =============================================
+
+# Reference
 
 ```{r}
 library(forecastML)
@@ -161,6 +370,7 @@ data("data_buoy_gaps", package = "forecastML")
 
 head(data_buoy_gaps)
 ```
+
 ```{r}
 data <- forecastML::fill_gaps(data_buoy_gaps, date_col = 1, frequency = '1 day', 
                               groups = 'buoy_id', static_features = c('lat', 'lon'))
@@ -191,16 +401,23 @@ static_features <- c("lat", "lon")
 ```{r}
 type <- "train"  # Create a model-training dataset.
 
-data_train <- forecastML::create_lagged_df(data, type = type, outcome_col = outcome_col,
-                                           horizons = horizons, lookback = lookback,
-                                           dates = dates, frequency = frequency,
+data_train <- forecastML::create_lagged_df(data, 
+                                           type = type,
+                                           outcome_col = outcome_col,
+                                           horizons = horizons, 
+                                           lookback = lookback,
+                                           dates = dates, 
+                                           frequency = frequency,
                                            dynamic_features = dynamic_features,
-                                           groups = groups, static_features = static_features, 
+                                           groups = groups, 
+                                           static_features = static_features, 
                                            use_future = FALSE)
 
 head(data_train)
 head(data_train$horizon_1)
 ```
+
+
 
 ```{r}
 windows <- forecastML::create_windows(data_train, window_length = 365, skip = 730,
@@ -231,7 +448,7 @@ model_function <- function(data, outcome_col = 1) {
                                     label = as.matrix(data[test_indices, 
                                                            outcome_col, drop = FALSE]))
 
-  params <- list("objective" = "reg:linear")
+  params <- list("objective" = "reg:squarederror")
   watchlist <- list(train = data_train, test = data_test)
   
   set.seed(224)
@@ -254,10 +471,33 @@ model_results_cv <- forecastML::train_model(lagged_df = data_train,
 ```
 
 ```{r}
+model_results_cv
+```
+
+
+```{r}
 summary(model_results_cv$horizon_1$window_1$model)
 ```
 
-```{r}
 
+```{r}
+prediction_function <- function(model, data_features) {
+  x <- xgboost::xgb.DMatrix(data = as.matrix(data_features))
+  data_pred <- data.frame("y_pred" = predict(model, x),
+                          "y_pred_lower" = predict(model, x) - 2,  # Optional; in practice, forecast bounds are not hard coded.
+                          "y_pred_upper" = predict(model, x) + 2)  # Optional; in practice, forecast bounds are not hard coded.
+  return(data_pred)
+}
 ```
+
+
+```{r}
+data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train)
+```
+
+
+```{r}
+plot(data_pred_cv)
+```
+
 
