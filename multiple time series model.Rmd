@@ -33,19 +33,21 @@ options(scipen = 99)
 .......
 
 Most of the cases encountered were using univariate time series. Unfortunately, real world use cases don't work that way. When there are multiple variables at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
-In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies.
+In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. We will solve this problem using direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
+Multiple (Multivariate) Time Series has more than one time-dependent variable. Each variable depends not only on its past values but also has some dependency on other variables. This dependency is used for forecasting future values[1].
+.........
 
 ## The purpose of `forecastML`
-In this article, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[1](https://cran.r-project.org/web/packages/forecastML/index.html).
+In this article, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
+The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[2]
 
 ## Learning Objectives
 
 The goal of this article is to help you:
 -to understand the main idea of package `forecastML`
--to understand the workflow of multivariate (multiple) time series forecasting
--to ...
+-to understand the steps of performing multivariate (multiple) time series forecasting
 
 ## Library
 
@@ -74,7 +76,8 @@ library(forecastML)
 # Conslusion
 
 # Reference
-- https://cran.r-project.org/web/packages/forecastML/index.html
+- [1] https://www.analyticsvidhya.com/blog/2018/09/multivariate-time-series-guide-forecasting-modeling-python-codes/ 
+- [2] https://cran.r-project.org/web/packages/forecastML/index.html
 - Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
 
