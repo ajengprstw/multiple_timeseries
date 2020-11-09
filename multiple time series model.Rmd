@@ -30,7 +30,7 @@ options(scipen = 99)
 ```
 
 # Introduction
-.......
+....
 
 Most of the cases encountered were using univariate time series. Unfortunately, real world use cases don't work that way. When there are multiple variables at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
 In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. We will solve this problem using direct forecasting method combined with machine learning method.
