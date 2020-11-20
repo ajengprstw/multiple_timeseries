@@ -85,6 +85,15 @@ Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:14
 walmart <- read_csv("data/train_walmart.csv")
 head(walmart)
 ```
+
+The daya contains 421550 observation and 5 variables. Here some description of each feature:
+
+- Store: the store number
+- Depth: the department number
+- Date: the week 
+- Weekly_Sales: sales for the given department in the given store
+- IsHoliday: whether the week is a special holiday week
+
 ```{r}
 data_clean <- walmart %>% 
                  mutate(Date = ymd(Date)) %>% 
@@ -92,20 +101,20 @@ data_clean <- walmart %>%
                  group_by(Store,Date) %>% 
                  summarise(Sales = mean(Weekly_Sales)) %>% 
                  ungroup()
-
-min_date <- min(data_clean$Date)
-max_date <- max(data_clean$Date)
+head(data_clean)
 ```
 
+Now we can visualize data by Store from the train dataset.
 ```{r}
 # visualize train
 ggplot(data_clean, aes(x = Date, y = Sales)) +
   geom_line() +
   facet_wrap(~ Store, ncol = 2, scales = "free")+
   labs(title = "Weekly Sales by Store (Train Dataset)", x = NULL, y = NULL, colour = NULL)+
-  theme_minimal()
+  tidyquant::theme_tq()
 ```
 
+Package forecastML have `fill_gaps()` to fill rows for the missing dates.
 ```{r}
 data_walmart <- forecastML::fill_gaps(data_clean, 
                                       date_col = 2,
@@ -113,14 +122,22 @@ data_walmart <- forecastML::fill_gaps(data_clean,
                                       groups = "Store")
 ```
 
-observasi data_clean dan data_walmart sama artinya tidak ada data yang hilang
+Let's see if we have missing dates:
 ```{r}
 nrow(data_clean)
 nrow(data_walmart)
 ```
 
+split data train data test
 ```{r}
-data_train <- forecastML::create_lagged_df(data_walmart, 
+
+```
+
+
+The number observation of `data_clean` and `data walmart the have same number. So we can say that we don't have missing dates.
+
+```{r}
+data_train <- forecastML::create_lagged_df(data_walmart, #ganti data train 
                                            type = "train", 
                                            outcome_col = 3,
                                            horizons = c(1,4,12),
@@ -133,16 +150,15 @@ data_train <- forecastML::create_lagged_df(data_walmart,
 head(data_train)
 ```
 
-
 ```{r}
-plot(data_train)+geom_tile()
+plot(data_train)
 ```
 
 ```{r}
 windows <- forecastML::create_windows(data_train, 
                                       window_length = 4*6, 
                                       skip = 4,
-                                      include_partial_window = FALSE)
+                                      include_partial_window = F)
 
 plot(windows, data_train) + theme(legend.position = "none")
 
@@ -187,13 +203,14 @@ model <- xgboost::xgb.train(data = dtrain,
                             nthread = 2, 
                             nrounds = 30,
                             metrics = "rmse",
-                            verbose = 0, 
                             early_stopping_rounds = 5, 
-                            watchlist = watchlist)
+                            watchlist = watchlist,
+                            verbosity = 0)
 
   return(model)
 }
 ```
+
 
 ```{r}
 model_results_cv <- forecastML::train_model(lagged_df = data_train,
@@ -202,6 +219,7 @@ model_results_cv <- forecastML::train_model(lagged_df = data_train,
                                             model_function = model_function, 
                                             use_future = FALSE)
 ```
+
 
 
 ```{r}
@@ -218,22 +236,39 @@ prediction_function <- function(model, data_features) {
 
 
 ```{r}
-data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train)
+data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train) # data test
 ```
+
+```{r}
+dat_new <- data_pred_cv %>% 
+  select(date_indices, Store, Sales, Sales_pred, model_forecast_horizon) %>% 
+  pivot_longer(cols = c(Sales, Sales_pred), names_to = "result")
+
+```
+
+
+```{r}
+ggplot(dat_new %>% filter(model_forecast_horizon %in% c(1:3)), aes(x = date_indices, y = value))+
+  geom_line( aes(group = result, col = result))+
+  facet_wrap(~Store+model_forecast_horizon, scales = "free")
+```
+
+
 
 ```{r}
 plot(data_pred_cv)
 ```
 
 ```{r}
-plot(data_pred_cv, facet = group ~ horizon, windows = 1)
+plot(data_pred_cv, facet = group ~ horizon, windows = 2)
 ```
 
 
 ```{r}
 data_error <- forecastML::return_error(data_pred_cv)
 
-plot(data_error, type = "window", metric = "mape")
+plot(data_error, type = "window", metric = "mape") %>% 
+  plotly::ggplotly()
 ```
 
 ```{r}
@@ -277,6 +312,10 @@ model_results_no_cv <- forecastML::train_model(lagged_df = data_train,
 ```{r}
 data_forecasts <- predict(model_results_no_cv, prediction_function = list(prediction_function), data = data_forecast)
 head(data_forecasts)
+```
+
+```{r}
+range(data_walmart$Date)
 ```
 
 
@@ -355,6 +394,7 @@ data_results <- predict(model_results_rf,
 data_results$Sales_pred <- round(data_results$Sales_pred,0)
 head(data_results)
 ```
+
 ```{r}
 MLmetrics::MAPE(y_pred = data_results$Sales_pred,y_true = data_results$Sales)
 ```
@@ -380,6 +420,8 @@ library(forecastML)
 data("data_buoy_gaps", package = "forecastML")
 
 head(data_buoy_gaps)
+
+range(data_buoy_gaps$date)
 ```
 
 ```{r}
