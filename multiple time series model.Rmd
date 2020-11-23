@@ -130,14 +130,21 @@ nrow(data_walmart)
 
 split data train data test
 ```{r}
-
+train <- data_walmart %>% 
+              group_by(Store) %>% 
+              filter(row_number() <= n() - 4*6) %>% 
+              ungroup()
+test <- data_walmart %>% 
+             group_by(Store) %>% 
+             filter(row_number() > n() - 4*6) %>% 
+             ungroup()
 ```
 
 
-The number observation of `data_clean` and `data walmart the have same number. So we can say that we don't have missing dates.
+The number observation of `data_clean` and `data walmart the have same number. So we can say that we don't have missing dates. Next, we will create model training with lagged
 
 ```{r}
-data_train <- forecastML::create_lagged_df(data_walmart, #ganti data train 
+data_train <- forecastML::create_lagged_df(data_walmart, 
                                            type = "train", 
                                            outcome_col = 3,
                                            horizons = c(1,4,12),
@@ -149,6 +156,21 @@ data_train <- forecastML::create_lagged_df(data_walmart, #ganti data train
                                            )
 head(data_train)
 ```
+
+```{r}
+data_test <- forecastML::create_lagged_df(test, 
+                                           type = "train", 
+                                           outcome_col = 3,
+                                           horizons = c(1,4,12),
+                                           lookback = 1:48,
+                                           dates = test$Date, 
+                                           frequency = "1 week",
+                                           dynamic_features = c("week","month"),
+                                           groups = "Store"
+                                           )
+head(data_test)
+```
+
 
 ```{r}
 plot(data_train)
@@ -213,17 +235,15 @@ model <- xgboost::xgb.train(data = dtrain,
 
 
 ```{r}
-model_results_cv <- forecastML::train_model(lagged_df = data_train,
+model_results <- forecastML::train_model(lagged_df = data_train,
                                             windows = windows,
                                             model_name = "xgboost",
                                             model_function = model_function, 
                                             use_future = FALSE)
 ```
 
-
-
 ```{r}
-summary(model_results_cv$horizon_1$window_1$model)
+summary(model_results$horizon_1$window_1$model)
 ```
 
 ```{r}
@@ -236,14 +256,13 @@ prediction_function <- function(model, data_features) {
 
 
 ```{r}
-data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train) # data test
+data_pred <- predict(model_results, prediction_function = list(prediction_function), data = data_test) 
 ```
 
 ```{r}
-dat_new <- data_pred_cv %>% 
+dat_new <- data_pred %>% 
   select(date_indices, Store, Sales, Sales_pred, model_forecast_horizon) %>% 
   pivot_longer(cols = c(Sales, Sales_pred), names_to = "result")
-
 ```
 
 
@@ -256,39 +275,19 @@ ggplot(dat_new %>% filter(model_forecast_horizon %in% c(1:3)), aes(x = date_indi
 
 
 ```{r}
-plot(data_pred_cv)
+#plot(data_pred)
 ```
 
 ```{r}
-plot(data_pred_cv, facet = group ~ horizon, windows = 2)
+#plot(data_pred, facet = group ~ horizon, windows = 2)
 ```
 
 
 ```{r}
-data_error <- forecastML::return_error(data_pred_cv)
+data_error <- forecastML::return_error(data_pred)
 
 plot(data_error, type = "window", metric = "mape") %>% 
   plotly::ggplotly()
-```
-
-```{r}
-data_forecast <- forecastML::create_lagged_df(data_walmart, 
-                                              type = "forecast", 
-                                              outcome_col = 3,
-                                              horizons = c(1,4,12), 
-                                              lookback = 1:48,
-                                              dates = data_walmart$Date, 
-                                              frequency = "1 week",
-                                              dynamic_features = c("week","month"),
-                                              groups = "Store")
-head(data_forecast)
-```
-
-
-```{r}
-data_forecasts <- predict(model_results_cv, 
-                          prediction_function = list(prediction_function), 
-                          data = data_forecast)
 ```
 
 ```{r}
@@ -301,8 +300,9 @@ windows <- forecastML::create_windows(data_train, window_length = 0)
 plot(windows, data_train) + theme(legend.position = "none")
 ```
 
+
 ```{r}
-model_results_no_cv <- forecastML::train_model(lagged_df = data_train, 
+model_results_test <- forecastML::train_model(lagged_df = data_test, 
                                                windows = windows,
                                                model_name = "xgboost",
                                                model_function = model_function,
@@ -310,35 +310,23 @@ model_results_no_cv <- forecastML::train_model(lagged_df = data_train,
 ```
 
 ```{r}
-data_forecasts <- predict(model_results_no_cv, prediction_function = list(prediction_function), data = data_forecast)
-head(data_forecasts)
-```
-
-```{r}
-range(data_walmart$Date)
+data_pred_test <- predict(model_results_test, prediction_function = list(prediction_function), data = data_test)
 ```
 
 
 ```{r}
-data_combined <- forecastML::combine_forecasts(data_forecasts)
-
-# Plot a background dataset of actuals using the most recent data.
-data_actual <- data_walmart %>% 
-               filter(Date >= "2012-11-02")
-actual_indices <- data_walmart %>% 
-                 filter(Date >= "2012-11-02") %>% 
-                 select(Date)
-
-# Plot all final forecasts plus historical data.
-plot(data_combined, data_actual = data_actual, actual_indices = actual_indices)
-# masih error karena seharusnya yg di forecast itu data test nya, tanggal nya belum sesuai
-
+pred_test <- data_pred_test %>% 
+  select(date_indices, Store, Sales, Sales_pred, model_forecast_horizon) %>% 
+  pivot_longer(cols = c(Sales, Sales_pred), names_to = "result")
 ```
+
 
 ```{r}
-range(data_walmart$Date)
-range(data_combined$forecast_period)
+ggplot(pred_test %>% filter(model_forecast_horizon %in% c(1:3)), aes(x = date_indices, y = value))+
+  geom_line( aes(group = result, col = result))+
+  facet_wrap(~Store+model_forecast_horizon, scales = "free")
 ```
+
 
 
 
