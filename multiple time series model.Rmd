@@ -53,6 +53,36 @@ For example, we may have parallel daily mortality, temperature, and black smoke 
 We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. 
 Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[5].
 
+The benefits to modeling multiple time series in one go with a single model or ensemble of models include (a) modeling simplicity, (b) potentially more robust results from pooling data across time series, and (c) solving the cold-start problem when few data points are available for a given time series[6].
+
+One of the method to conduct this multiple time series forecasting is to use machine learning model.
+By using the machine learning method, we should transform the data so that it can be processed by supervised learning using various regression algorithm.
+There are four strategies for multiple time series forescasting :
+
+1. Recursive strategy
+Recursive strategy is the oldest and most intuitive strategy to forecast a time series multiple steps ahead[10].
+This strategy trains first a one step model then uses it recursively for returning a multistep prediction.
+The deficiency of this strategy is its sensitivity to the estimation error, since estimated values, instead of actual ones, are more and more used when we get further in the future.
+
+2. Direct strategy
+Direct strategy consists of forecasting each horizon independently from the others. 
+This strategy does not use any approximated values to compute the forecasts, being then immune to the accumulation of errors. 
+However, the models are learned independently inducing a conditional independence of the H forecasts. 
+This affects the forecasting accuracy as it prevents the strategy from considering complex dependencies between the variables
+Unfortunately, this strategy demands a large computational time since there are as many models to learn as the size of the horizon.
+
+
+3. DirRec strategy
+The DirRec strategy combines the architectures and the principles underlying the Direct and the Recursive strategies. DirRec computes the forecasts with different models for every horizon (like the Direct strategy) and, at each time step, it enlarges the set of inputs by adding variables corresponding to the forecasts of the previous step (like the Recursive strategy). However, note that unlike the two previous strategies, the embedding size n is not the same for all the horizons.
+
+4. Multiple output strategies
+  a. MIMO Strategy
+      The Multi-Input Multi-Output (MIMO) strategy (also known as Joint strategy [9]) avoids the simplistic assumption of conditional independence between future values made by the Direct strategy by learning a single multiple-output model.The rationale of the MIMO strategy is to model, between the predicted values, the stochastic dependency characterizing the time series. This strategy avoids the conditional independence assumption made by the direct strategy as well as the accumulation of errors which plagues the recursive strategy.
+   b. DIRMO Strategy
+      The DIRMO strategy [10,9] aims to preserve the most appealing aspects of DIRect and MIMO strategies by partitioning the horizon H in several blocks, and using MIMO to forecast the values inside each Machine Learning Strategies for Time Series Forecasting block.
+
+Overall, All these strategies learn the dependency between the past and the future in different manners by making specific assumptions. 
+
 ## The purpose of `forecastML`
 In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
 The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[2]
@@ -94,6 +124,13 @@ library(forecastML)
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
 - [4] Whittle, P. “The Analysis of Multiple Stationary Time Series.” Journal of the Royal Statistical Society. Series B (Methodological), vol. 15, no. 1, 1953, pp. 125–139. JSTOR, www.jstor.org/stable/2983728. Accessed 25 Nov. 2020.
 - [5] Tiao, G. C. “An Introduction to Multiple Time Series Analysis.” Medical Care, vol. 31, no. 5, 1993, pp. YS71–YS74. JSTOR, www.jstor.org/stable/3766151. Accessed 25 Nov. 2020.
+- [6] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
+- [7] A. Galicia, R. Talavera-Llames, A. Troncoso, I. Koprinska, F. Martínez-Álvarez, Multi-step forecasting for big data time series based on ensemble learning, Knowledge-Based Systems, Volume 163,2019,Pages 830-841,ISSN 0950-7051, https://doi.org/10.1016/j.knosys.2018.10.009.
+- [8] Bontempi, Gianluca & Ben Taieb, Souhaib & Le Borgne, Yann-Aël. (2013). Machine Learning Strategies for Time Series Forecasting. 10.1007/978-3-642-36318-4_3. 
+- [9] Kline, D.M.: Methods for multi-step time series forecasting with neural networks.
+In: Peter Zhang, G. (ed.) Neural Networks in Business Forecasting, pp. 226–250.
+Information Science Publishing (2004)
+- [10] Weigend and Gershenfeld, 1994; Sorjamaa et al., 2007; Cheng et al., 2006; Tiao and Tsay, 1994; Kline, 2004; Hamzaebi et al., 2009
 
 ```{r}
 walmart <- read_csv("data/train_walmart.csv")
