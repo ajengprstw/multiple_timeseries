@@ -44,9 +44,14 @@ With this dataset, we are going to help them in solving store sales forecasting 
 We will solve this problem using direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
-Multiple Time Series has more than one time-dependent variable. Each variable depends not only on its past values but also has some dependency on other variables. This dependency is used for forecasting future values[1].
-.........
-Multiple time series data of the kind described may be available in different locations. For example, we may have parallel daily mortality, temperature, and black smoke data over different metropolitan areas in England and other European countries. We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[5].
+Multiple Time Series has more than one time-dependent variable. 
+Each variable depends not only on its past values but also has some dependency on other variables. 
+This dependency is used for forecasting future values[1].
+
+Multiple time series data of the kind described may be available in different locations. 
+For example, we may have parallel daily mortality, temperature, and black smoke data over different metropolitan areas in England and other European countries. 
+We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. 
+Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[5].
 
 ## The purpose of `forecastML`
 In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
