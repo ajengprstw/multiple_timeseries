@@ -127,10 +127,11 @@ Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:14
 - [6] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
 - [7] A. Galicia, R. Talavera-Llames, A. Troncoso, I. Koprinska, F. Martínez-Álvarez, Multi-step forecasting for big data time series based on ensemble learning, Knowledge-Based Systems, Volume 163,2019,Pages 830-841,ISSN 0950-7051, https://doi.org/10.1016/j.knosys.2018.10.009.
 - [8] Bontempi, Gianluca & Ben Taieb, Souhaib & Le Borgne, Yann-Aël. (2013). Machine Learning Strategies for Time Series Forecasting. 10.1007/978-3-642-36318-4_3. 
-- [9] Kline, D.M.: Methods for multi-step time series forecasting with neural networks.
-In: Peter Zhang, G. (ed.) Neural Networks in Business Forecasting, pp. 226–250.
-Information Science Publishing (2004)
+- [9] Kline, D.M.: Methods for multi-step time series forecasting with neural networks. In: Peter Zhang, G. (ed.) Neural Networks in Business Forecasting, pp. 226–250. Information Science Publishing (2004)
 - [10] Weigend and Gershenfeld, 1994; Sorjamaa et al., 2007; Cheng et al., 2006; Tiao and Tsay, 1994; Kline, 2004; Hamzaebi et al., 2009
+- [11] Ben Taieb, Souhaib & Bontempi, Gianluca & Atiya, Amir & Sorjamaa, Antti. (2011). A review and comparison of strategies for multi-step ahead time series
+forecasting based on the NN5 forecasting competition. Expert Systems with Applications. 39. 10.1016/j.eswa.2012.01.039. 
+
 
 ```{r}
 walmart <- read_csv("data/train_walmart.csv")
