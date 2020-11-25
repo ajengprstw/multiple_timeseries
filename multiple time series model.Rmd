@@ -44,11 +44,12 @@ With this dataset, we are going to help them in solving store sales forecasting 
 We will solve this problem using direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
-Multiple (Multivariate) Time Series has more than one time-dependent variable. Each variable depends not only on its past values but also has some dependency on other variables. This dependency is used for forecasting future values[1].
+Multiple Time Series has more than one time-dependent variable. Each variable depends not only on its past values but also has some dependency on other variables. This dependency is used for forecasting future values[1].
 .........
+Multiple time series data of the kind described may be available in different locations. For example, we may have parallel daily mortality, temperature, and black smoke data over different metropolitan areas in England and other European countries. We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[5].
 
 ## The purpose of `forecastML`
-In this article, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
+In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
 The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[2]
 
 ## Learning Objectives
@@ -84,8 +85,10 @@ library(forecastML)
 # Reference
 - [1] https://www.analyticsvidhya.com/blog/2018/09/multivariate-time-series-guide-forecasting-modeling-python-codes/ 
 - [2] https://cran.r-project.org/web/packages/forecastML/index.html
-- Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
+- [3] Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
+- [4] Whittle, P. “The Analysis of Multiple Stationary Time Series.” Journal of the Royal Statistical Society. Series B (Methodological), vol. 15, no. 1, 1953, pp. 125–139. JSTOR, www.jstor.org/stable/2983728. Accessed 25 Nov. 2020.
+- [5] Tiao, G. C. “An Introduction to Multiple Time Series Analysis.” Medical Care, vol. 31, no. 5, 1993, pp. YS71–YS74. JSTOR, www.jstor.org/stable/3766151. Accessed 25 Nov. 2020.
 
 ```{r}
 walmart <- read_csv("data/train_walmart.csv")
