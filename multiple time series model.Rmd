@@ -30,11 +30,18 @@ options(scipen = 99)
 ```
 
 # Introduction
-There are many things we can do with data. One of them is to forecast data based on information from the previous data. An industry that commonly uses forecasting methods is the economic industry, for instance to forecast monthly inflation, sales, losses, etc. To do this forecasting, it usually uses time sequential data so that the time variable is a very crucial variable because the order pattern is very considered.To process this sequential data  so that we can get the forecast results, an appropriate data analysis method is needed, namely Time Series Analysis.
+There are many things we can do with data. One of them is to forecast data based on information from the previous data. 
+An industry that commonly uses forecasting methods is the economic industry, for instance to forecast monthly inflation, sales, losses, etc. 
+To do this forecasting, it usually uses time sequential data so that the time variable is a very crucial variable because the order pattern is very considered.
+To process this sequential data  so that we can get the forecast results, an appropriate data analysis method is needed, namely Time Series Analysis.
 
-Most of the cases encountered were using univariate time series which only consists of 2 variables and 1 object. Unfortunately, real world use cases not always as simple as that. When there are multiple variables and objects at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
+Most of the cases encountered were using univariate time series which only consists of 2 variables and 1 object. 
+Unfortunately, real world use cases not always as simple as that. 
+When there are multiple variables and objects at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
 
-In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. We will solve this problem using direct forecasting method combined with machine learning method.
+In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). 
+With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. 
+We will solve this problem using direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
 Multiple (Multivariate) Time Series has more than one time-dependent variable. Each variable depends not only on its past values but also has some dependency on other variables. This dependency is used for forecasting future values[1].
