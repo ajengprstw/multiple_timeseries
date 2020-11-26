@@ -29,6 +29,7 @@ knitr::opts_chunk$set(
 options(scipen = 99)
 ```
 
+
 # Introduction
 There are many things we can do with data. One of them is to forecast data based on information from the previous data. 
 An industry that commonly uses forecasting methods is the economic industry, for instance to forecast monthly inflation, sales, losses, etc. 
@@ -113,6 +114,8 @@ library(forecastML)
 
 ## XGBoost
 
+## ....
+
 # Model Performance
 
 # Conslusion
@@ -120,75 +123,82 @@ library(forecastML)
 # Reference
 - [1] https://www.analyticsvidhya.com/blog/2018/09/multivariate-time-series-guide-forecasting-modeling-python-codes/ 
 - [2] https://cran.r-project.org/web/packages/forecastML/index.html
-- [3] Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
+- Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
-- [4] Whittle, P. “The Analysis of Multiple Stationary Time Series.” Journal of the Royal Statistical Society. Series B (Methodological), vol. 15, no. 1, 1953, pp. 125–139. JSTOR, www.jstor.org/stable/2983728. Accessed 25 Nov. 2020.
-- [5] Tiao, G. C. “An Introduction to Multiple Time Series Analysis.” Medical Care, vol. 31, no. 5, 1993, pp. YS71–YS74. JSTOR, www.jstor.org/stable/3766151. Accessed 25 Nov. 2020.
-- [6] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
-- [7] A. Galicia, R. Talavera-Llames, A. Troncoso, I. Koprinska, F. Martínez-Álvarez, Multi-step forecasting for big data time series based on ensemble learning, Knowledge-Based Systems, Volume 163,2019,Pages 830-841,ISSN 0950-7051, https://doi.org/10.1016/j.knosys.2018.10.009.
-- [8] Bontempi, Gianluca & Ben Taieb, Souhaib & Le Borgne, Yann-Aël. (2013). Machine Learning Strategies for Time Series Forecasting. 10.1007/978-3-642-36318-4_3. 
-- [9] Kline, D.M.: Methods for multi-step time series forecasting with neural networks. In: Peter Zhang, G. (ed.) Neural Networks in Business Forecasting, pp. 226–250. Information Science Publishing (2004)
-- [10] Weigend and Gershenfeld, 1994; Sorjamaa et al., 2007; Cheng et al., 2006; Tiao and Tsay, 1994; Kline, 2004; Hamzaebi et al., 2009
-- [11] Ben Taieb, Souhaib & Bontempi, Gianluca & Atiya, Amir & Sorjamaa, Antti. (2011). A review and comparison of strategies for multi-step ahead time series
-forecasting based on the NN5 forecasting competition. Expert Systems with Applications. 39. 10.1016/j.eswa.2012.01.039. 
 
+## Hotel
 
 ```{r}
-walmart <- read_csv("data/train_walmart.csv")
-head(walmart)
+hotel <- read_csv("data/hotel_bookings.csv") %>% 
+         mutate_if(is.character, as.factor) %>% 
+         unite("arrival_date", arrival_date_year, 
+               arrival_date_month, 
+               arrival_date_day_of_month, sep = "-") %>% 
+         mutate(arrival_date = ymd(arrival_date)) %>% 
+         filter(market_segment %>% 
+                  str_detect("TA|Direct")) %>% 
+         group_by(arrival_date, hotel) %>% 
+         summarise(demand = n()) %>% 
+         ungroup()
+head(hotel)
+
 ```
 
-The daya contains 421550 observation and 5 variables. Here some description of each feature:
-
-- Store: the store number
-- Depth: the department number
-- Date: the week 
-- Weekly_Sales: sales for the given department in the given store
-- IsHoliday: whether the week is a special holiday week
+```{r}
+hotel_clean <- hotel %>% 
+  filter(demand < 200)
+```
 
 ```{r}
-data_clean <- walmart %>% 
-                 mutate(Date = ymd(Date)) %>% 
-                 filter(Store %in% 1:5) %>%
-                 group_by(Store,Date) %>% 
-                 summarise(Sales = mean(Weekly_Sales)) %>% 
-                 ungroup()
-head(data_clean)
+hotel_clean2 <- fill_gaps(hotel_clean, 
+                          date_col = 1, 
+                          frequency = "1 day",
+                           groups = "hotel")
+```
+Let's see if we have missing dates:
+```{r}
+nrow(hotel_clean)
+nrow(hotel_clean2)
+
+colSums(is.na(hotel_clean2))
+```
+
+```{r}
+library(tidyr)
+hotel_clean2 <- hotel_clean2 %>% 
+                fill(demand, .direction = "updown")
+colSums(is.na(hotel_clean2))
 ```
 
 Now we can visualize data by Store from the train dataset.
 ```{r}
 # visualize train
-ggplot(data_clean, aes(x = Date, y = Sales)) +
+ggplot(hotel_clean2, aes(x = arrival_date, y = demand)) +
   geom_line() +
-  facet_wrap(~ Store, ncol = 2, scales = "free")+
+  facet_wrap(~ hotel, ncol = 2, scales = "free")+
   labs(title = "Weekly Sales by Store (Train Dataset)", x = NULL, y = NULL, colour = NULL)+
   tidyquant::theme_tq()
 ```
 
 Package forecastML have `fill_gaps()` to fill rows for the missing dates.
 ```{r}
-data_walmart <- forecastML::fill_gaps(data_clean, 
-                                      date_col = 2,
-                                      frequency = "1 week", 
-                                      groups = "Store")
+data_hotel <- forecastML::fill_gaps(hotel_clean2, 
+                                      date_col = 1,
+                                      frequency = "1 day", 
+                                      groups = "hotel")
 ```
 
-Let's see if we have missing dates:
-```{r}
-nrow(data_clean)
-nrow(data_walmart)
-```
+
 
 split data train data test
 ```{r}
-train <- data_walmart %>% 
-              group_by(Store) %>% 
-              filter(row_number() <= n() - 4*6) %>% 
+train <- data_hotel %>% 
+              group_by(hotel) %>% 
+              filter(row_number() <= n() - 30) %>% 
               ungroup()
-test <- data_walmart %>% 
-             group_by(Store) %>% 
-             filter(row_number() > n() - 4*6) %>% 
+test <- data_hotel %>% 
+             group_by(hotel) %>% 
+             filter(row_number() > n() - 30) %>% 
              ungroup()
 ```
 
@@ -196,29 +206,30 @@ test <- data_walmart %>%
 The number observation of `data_clean` and `data walmart the have same number. So we can say that we don't have missing dates. Next, we will create model training with lagged
 
 ```{r}
-data_train <- forecastML::create_lagged_df(data_walmart, 
+data_train <- forecastML::create_lagged_df(data_hotel, 
                                            type = "train", 
                                            outcome_col = 3,
-                                           horizons = c(1,4,12),
-                                           lookback = 1:48,
-                                           dates = data_walmart$Date, 
-                                           frequency = "1 week",
-                                           dynamic_features = c("week","month"),
-                                           groups = "Store"
+                                           horizons = c(1,7),
+                                           lookback = 1:7,
+                                           dates = data_hotel$arrival_date, 
+                                           frequency = "1 day",
+                                           dynamic_features = c("day","week"),
+                                           groups = "hotel"
                                            )
 head(data_train)
 ```
 
+
 ```{r}
-data_test <- forecastML::create_lagged_df(test, 
-                                           type = "train", 
+data_test <- forecastML::create_lagged_df(train, 
+                                          type = "forecast", 
                                            outcome_col = 3,
-                                           horizons = c(1,4,12),
-                                           lookback = 1:48,
-                                           dates = test$Date, 
-                                           frequency = "1 week",
-                                           dynamic_features = c("week","month"),
-                                           groups = "Store"
+                                           horizons = c(1,7),
+                                           lookback = 1:7,
+                                           dates = train$arrival_date, 
+                                           frequency = "1 day",
+                                           dynamic_features = c("day","week"),
+                                           groups = "hotel"
                                            )
 head(data_test)
 ```
@@ -230,8 +241,8 @@ plot(data_train)
 
 ```{r}
 windows <- forecastML::create_windows(data_train, 
-                                      window_length = 4*6, 
-                                      skip = 4,
+                                      window_length = 7*4, 
+                                      skip = 7,
                                       include_partial_window = F)
 
 plot(windows, data_train) + theme(legend.position = "none")
@@ -240,22 +251,14 @@ plot(windows, data_train) + theme(legend.position = "none")
 
 
 ```{r}
-plot(windows, 
-     data_train,
-     group_filter = "Store == 1"
-     ) + 
-  theme(legend.position = "none")
-```
-
-```{r}
 model_function <- function(data, outcome_col = 1) {
   
 data <- data[!is.na(data[, 1]), ]
 
 data_train <- data %>% 
-              head(-4*6)
+              head(-30)
 data_test <- data %>% 
-             tail(4*6)
+             tail(30)
 
 # convert data to matrix
 train_matrix <- data.matrix(data_train[,-1, drop = F])
@@ -306,291 +309,53 @@ prediction_function <- function(model, data_features) {
 }
 ```
 
-
 ```{r}
-data_pred <- predict(model_results, prediction_function = list(prediction_function), data = data_test) 
+data_pred_train <- predict(model_results, prediction_function = list(prediction_function), data = data_train) 
+
 ```
 
 ```{r}
-dat_new <- data_pred %>% 
-  select(date_indices, Store, Sales, Sales_pred, model_forecast_horizon) %>% 
-  pivot_longer(cols = c(Sales, Sales_pred), names_to = "result")
+plot(data_pred_train)
+```
+
+```{r}
+pred_train <- data_pred_train %>% 
+  select(date_indices, hotel, demand, demand_pred, model_forecast_horizon) %>% 
+  pivot_longer(cols = c(demand, demand_pred), names_to = "result") 
 ```
 
 
 ```{r}
-ggplot(dat_new %>% filter(model_forecast_horizon %in% c(1:3)), aes(x = date_indices, y = value))+
+ggplot(pred_train, aes(x = date_indices, y = value))+
   geom_line( aes(group = result, col = result))+
-  facet_wrap(~Store+model_forecast_horizon, scales = "free")
-```
-
-
-
-```{r}
-#plot(data_pred)
-```
-
-```{r}
-#plot(data_pred, facet = group ~ horizon, windows = 2)
+  facet_grid(hotel~model_forecast_horizon, scales = "free",)+
+  tidyquant::theme_tq()
 ```
 
 
 ```{r}
-data_error <- forecastML::return_error(data_pred)
+data_pred_test <- predict(model_results, prediction_function = list(prediction_function), data = data_test) 
 
-plot(data_error, type = "window", metric = "mape") %>% 
-  plotly::ggplotly()
 ```
 
 ```{r}
-plot(data_forecasts)
-```
-
-```{r}
-windows <- forecastML::create_windows(data_train, window_length = 0)
-
-plot(windows, data_train) + theme(legend.position = "none")
-```
-
-
-```{r}
-model_results_test <- forecastML::train_model(lagged_df = data_test, 
-                                               windows = windows,
-                                               model_name = "xgboost",
-                                               model_function = model_function,
-                                               use_future = FALSE)
-```
-
-```{r}
-data_pred_test <- predict(model_results_test, prediction_function = list(prediction_function), data = data_test)
+test
 ```
 
 
 ```{r}
 pred_test <- data_pred_test %>% 
-  select(date_indices, Store, Sales, Sales_pred, model_forecast_horizon) %>% 
-  pivot_longer(cols = c(Sales, Sales_pred), names_to = "result")
+  select(forecast_period, hotel, demand_pred, model_forecast_horizon) %>% 
+#  pivot_longer(cols = c(demand_pred), names_to = "result") %>%
+  rename(arrival_date = forecast_period) %>% 
+  left_join(test,by = c("arrival_date", "hotel")) %>% 
+    pivot_longer(cols = c(demand_pred, demand), names_to = "result")
 ```
 
 
 ```{r}
-ggplot(pred_test %>% filter(model_forecast_horizon %in% c(1:3)), aes(x = date_indices, y = value))+
+ggplot(pred_test, aes(x = arrival_date, y = value))+
   geom_line( aes(group = result, col = result))+
-  facet_wrap(~Store+model_forecast_horizon, scales = "free")
+  facet_grid(hotel~model_forecast_horizon, scales = "free",)+
+  tidyquant::theme_tq()
 ```
-
-
-
-
-## Random Forest
-
-
-```{r}
-data_train <- forecastML::create_lagged_df(data_walmart, 
-                                           type = "train", 
-                                           outcome_col = 3,
-                                           horizons = c(1,4,12),
-                                           lookback = 1:48,
-                                           dates = data_walmart$Date, 
-                                           frequency = "1 week",
-                                           dynamic_features = c("week","month"),
-                                           #groups = "Store"
-                                           )
-head(data_train)
-```
-
-
-```{r}
-model_rf <- function(data, outcome_cols = 1) {
-   outcome_names <- names(data)[outcome_cols]
-  model_formula <- formula(paste0(outcome_names,  "~ ."))
-
-  model <- randomForest::randomForest(formula = model_formula,
-                                      data = data, 
-                                      ntree = 200)
-  return(model) 
-}
-```
-
-
-```{r}
-model_results_rf <- forecastML::train_model(lagged_df = data_train, windows, 
-                                           model_rf, model_name = "RF",
-                                           use_future = F)
-```
-
-```{r}
-prediction_rf <- function(model, data_features) {
-
-  data_pred <- data.frame("y_pred" = predict(model, data_features))
-  return(data_pred)
-}
-data_results <- predict(model_results_rf, 
-                        prediction_function = list(prediction_rf), 
-                        data = data_train)
-```
-
-```{r}
-data_results$Sales_pred <- round(data_results$Sales_pred,0)
-head(data_results)
-```
-
-```{r}
-MLmetrics::MAPE(y_pred = data_results$Sales_pred,y_true = data_results$Sales)
-```
-```{r}
-ggplot(data = data_results,mapping = aes(x = date_indices, y = Sales)) +
-  geom_line(col = "red")+
-  geom_line(data = data_results,mapping = aes(x = date_indices, y = Sales_pred), col = "blue")
-```
-
-```{r}
-plot(data_results, type = "prediction", horizons = c(1,4,12))
-```
-
-
-
-
-=============================================
-
-# Reference
-
-```{r}
-library(forecastML)
-data("data_buoy_gaps", package = "forecastML")
-
-head(data_buoy_gaps)
-
-range(data_buoy_gaps$date)
-```
-
-```{r}
-data <- forecastML::fill_gaps(data_buoy_gaps, date_col = 1, frequency = '1 day', 
-                              groups = 'buoy_id', static_features = c('lat', 'lon'))
-data$day <- lubridate::mday(data$date)
-data$year <- lubridate::year(data$date)
-```
-
-```{r}
-data$buoy_id <- as.numeric(factor(data$buoy_id))
-outcome_col <- 1  # The column position of our 'wind_spd' outcome (after removing the 'date' column).
-
-horizons <- c(1, 7, 30)  # Forecast 1, 1:7, and 1:30 days into the future.
-
-lookback <- c(1:30, 360:370)  # Features from 1 to 30 days in the past and annually.
-
-dates <- data$date  # Grouped time series forecasting requires dates.
-data$date <- NULL  # Dates, however, don't need to be in the input data.
-
-frequency <- "1 day"  # A string that works in base::seq(..., by = "frequency").
-
-dynamic_features <- c("day", "year")  # Features that change through time but which will not be lagged.
-
-groups <- "buoy_id"  # 1 forecast for each group or buoy.
-
-static_features <- c("lat", "lon")
-```
-
-```{r}
-type <- "train"  # Create a model-training dataset.
-
-data_train <- forecastML::create_lagged_df(data, 
-                                           type = type,
-                                           outcome_col = outcome_col,
-                                           horizons = horizons, 
-                                           lookback = lookback,
-                                           dates = dates, 
-                                           frequency = frequency,
-                                           dynamic_features = dynamic_features,
-                                           groups = groups, 
-                                           static_features = static_features, 
-                                           use_future = FALSE)
-
-head(data_train)
-head(data_train$horizon_1)
-```
-
-
-
-```{r}
-windows <- forecastML::create_windows(data_train, window_length = 365, skip = 730,
-                                      include_partial_window = FALSE)
-
-p <- plot(windows, data_train) + theme(legend.position = "none")
-p
-```
-```{r}
-model_function <- function(data, outcome_col = 1) {
-  
-  # xgboost cannot handle missing outcomes data.
-  data <- data[!is.na(data[, outcome_col]), ]
-
-  indices <- 1:nrow(data)
-  
-  set.seed(224)
-  train_indices <- sample(1:nrow(data), ceiling(nrow(data) * .8), replace = FALSE)
-  test_indices <- indices[!(indices %in% train_indices)]
-
-  data_train <- xgboost::xgb.DMatrix(data = as.matrix(data[train_indices, 
-                                                           -(outcome_col), drop = FALSE]),
-                                     label = as.matrix(data[train_indices, 
-                                                            outcome_col, drop = FALSE]))
-
-  data_test <- xgboost::xgb.DMatrix(data = as.matrix(data[test_indices, 
-                                                          -(outcome_col), drop = FALSE]),
-                                    label = as.matrix(data[test_indices, 
-                                                           outcome_col, drop = FALSE]))
-
-  params <- list("objective" = "reg:squarederror")
-  watchlist <- list(train = data_train, test = data_test)
-  
-  set.seed(224)
-  model <- xgboost::xgb.train(data = data_train, params = params, 
-                              max.depth = 8, nthread = 2, nrounds = 30,
-                              metrics = "rmse", verbose = 0, 
-                              early_stopping_rounds = 5, 
-                              watchlist = watchlist)
-
-  return(model)
-}
-```
-
-```{r}
-model_results_cv <- forecastML::train_model(lagged_df = data_train,
-                                            windows = windows,
-                                            model_name = "xgboost",
-                                            model_function = model_function, 
-                                            use_future = FALSE)
-```
-
-```{r}
-model_results_cv
-```
-
-
-```{r}
-summary(model_results_cv$horizon_1$window_1$model)
-```
-
-
-```{r}
-prediction_function <- function(model, data_features) {
-  x <- xgboost::xgb.DMatrix(data = as.matrix(data_features))
-  data_pred <- data.frame("y_pred" = predict(model, x),
-                          "y_pred_lower" = predict(model, x) - 2,  # Optional; in practice, forecast bounds are not hard coded.
-                          "y_pred_upper" = predict(model, x) + 2)  # Optional; in practice, forecast bounds are not hard coded.
-  return(data_pred)
-}
-```
-
-
-```{r}
-data_pred_cv <- predict(model_results_cv, prediction_function = list(prediction_function), data = data_train)
-```
-
-
-```{r}
-plot(data_pred_cv)
-```
-
-
