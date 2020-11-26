@@ -40,7 +40,7 @@ Most of the cases encountered were using univariate time series which only consi
 Unfortunately, real world use cases not always as simple as that. 
 When there are multiple variables and objects at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
 
-In this case, we are provided a walmart store sales dataset from  Kaggle (https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data). 
+In this case, we are provided a Hotel booking dataset from  Kaggle (https://www.kaggle.com/jessemostipak/hotel-booking-demand). 
 With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. 
 We will solve this problem using direct forecasting method combined with machine learning method.
 
@@ -107,6 +107,8 @@ library(forecastML)
 # Data Preprocess using `forecastML`
 
 ## Lagged Features
+Lag features are the classical way that time series forecasting problems are transformed into supervised learning problems.
+The simplest approach is to predict the value at the next time (t+1) given the value at the previous time (t-1)[3].
 
 ## Nested cross validation
 
@@ -125,6 +127,7 @@ library(forecastML)
 - [2] https://cran.r-project.org/web/packages/forecastML/index.html
 - Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
+- [3] https://machinelearningmastery.com/basic-feature-engineering-time-series-data-python/ 
 
 ## Hotel
 
