@@ -41,7 +41,7 @@ Unfortunately, real world use cases not always as simple as that.
 When there are multiple variables and objects at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
 
 In this case, we are provided a Hotel booking dataset from  Kaggle (https://www.kaggle.com/jessemostipak/hotel-booking-demand). 
-With this dataset, we are going to help them in solving store sales forecasting problems in order to improve their business strategies. 
+With this dataset, we are going to help them in solving demand forecasting of two types of hotels problems in order to improve their business strategies. 
 We will solve this problem using direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
@@ -87,6 +87,11 @@ Overall, All these strategies learn the dependency between the past and the futu
 ## The purpose of `forecastML`
 In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
 The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[2]
+Benefits of using this package to modeling multiple time series in one go with a single model or ensemble of models include[5]
+(a) modeling simplicity
+(b) potentially more robust results from pooling data across time series 
+(c) solving the cold-start problem when few data points are available for a given time series.
+
 
 ## Learning Objectives
 
@@ -115,6 +120,10 @@ The simplest approach is to predict the value at the next time (t+1) given the v
 # Model Training
 
 ## XGBoost
+XGBoost is an optimized distributed gradient boosting library designed to be highly efficient, flexible and portable[4]. 
+It implements machine learning algorithms under the Gradient Boosting framework.
+XGBoost provides a parallel tree boosting (also known as GBDT, GBM) that solve many data science problems in a fast and accurate way. 
+The same code runs on major distributed environment (Hadoop, SGE, MPI) and can solve problems beyond billions of examples.
 
 ## ....
 
@@ -128,6 +137,9 @@ The simplest approach is to predict the value at the next time (t+1) given the v
 - Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
 Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
 - [3] https://machinelearningmastery.com/basic-feature-engineering-time-series-data-python/ 
+- [4] https://xgboost.readthedocs.io/en/latest/
+- [5] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
+
 
 ## Hotel
 
@@ -173,7 +185,7 @@ hotel_clean2 <- hotel_clean2 %>%
 colSums(is.na(hotel_clean2))
 ```
 
-Now we can visualize data by Store from the train dataset.
+Now we can visualize data by hotel types from the train dataset.
 ```{r}
 # visualize train
 ggplot(hotel_clean2, aes(x = arrival_date, y = demand)) +
@@ -193,7 +205,7 @@ data_hotel <- forecastML::fill_gaps(hotel_clean2,
 
 
 
-split data train data test
+splitting into data train and data test
 ```{r}
 train <- data_hotel %>% 
               group_by(hotel) %>% 
