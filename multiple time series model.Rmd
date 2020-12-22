@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Direct Forecasting with Multiple Time Series"
 author: "Ajeng Prastiwi, Allissa Rahman"
 date: "`r format(Sys.Date(), '%B %e, %Y')`"
 output:
@@ -27,70 +27,67 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 options(scipen = 99)
+
 ```
 
 
 # Introduction
-There are many things we can do with data. One of them is to forecast data based on information from the previous data. 
-An industry that commonly uses forecasting methods is the economic industry, for instance to forecast monthly inflation, sales, losses, etc. 
-To do this forecasting, it usually uses time sequential data so that the time variable is a very crucial variable because the order pattern is very considered.
-To process this sequential data  so that we can get the forecast results, an appropriate data analysis method is needed, namely Time Series Analysis.
 
-Most of the cases encountered were using univariate time series which only consists of 2 variables and 1 object. 
-Unfortunately, real world use cases not always as simple as that. 
-When there are multiple variables and objects at play, it would be inefficient to perform univariate time series, so we have to handle all of them at the same time using Multiple Time Series.
+There are many things we can do with data. One of them is to forecast data based on information from the previous data. An industry that commonly uses forecasting methods is the economic industry, for instance, to forecast monthly inflation, sales, losses, etc. To do this forecasting, it usually uses time-sequential data so that the time variable is a very crucial variable because the order pattern is very considered. To process this sequential data so that we can get the forecast results, an appropriate data analysis method is needed, namely Time Series Analysis.
+
+Most of the cases encountered were using univariate time series consist of a single observation. In some applications, we have to deal with the analysis of direct forecasting with multiple time series.
 
 In this case, we are provided a Hotel booking dataset from  Kaggle (https://www.kaggle.com/jessemostipak/hotel-booking-demand). 
-With this dataset, we are going to help them in solving demand forecasting of two types of hotels problems in order to improve their business strategies. 
-We will solve this problem using direct forecasting method combined with machine learning method.
+With this dataset, we are going to help them in solving demand forecasting of two types of hotel problems in order to improve their business strategies. We will solve this problem using a direct forecasting method combined with machine learning method.
 
 ## Multiple Time Series
-Multiple Time Series has more than one time-dependent variable. 
-Each variable depends not only on its past values but also has some dependency on other variables. 
-This dependency is used for forecasting future values[1].
 
-Multiple time series data of the kind described may be available in different locations. 
-For example, we may have parallel daily mortality, temperature, and black smoke data over different metropolitan areas in England and other European countries. 
-We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. 
-Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[5].
+Multiple time series data of the kind described may be available in different locations. For example, we may have parallel daily mortality, temperature, and black smoke data over different metropolitan areas in England and other European countries. We would certainly expect that the structure of the relationships among the three time series would be similar in the different locations. Thus, it would be interesting to model these parallel multiple time series together in a hierarchic framework so that information from one location can be utilized to help model the relationships and forecast future observations in other locations[^5].
 
-The benefits to modeling multiple time series in one go with a single model or ensemble of models include (a) modeling simplicity, (b) potentially more robust results from pooling data across time series, and (c) solving the cold-start problem when few data points are available for a given time series[6].
+One of the methods to conduct this multiple time series forecasting is to use machine learning model. By using the machine learning method, we should transform the data so that it can be processed by supervised learning using various regression algorithm.
 
-One of the method to conduct this multiple time series forecasting is to use machine learning model.
-By using the machine learning method, we should transform the data so that it can be processed by supervised learning using various regression algorithm.
 There are four strategies for multiple time series forescasting :
 
 1. Recursive strategy
-Recursive strategy is the oldest and most intuitive strategy to forecast a time series multiple steps ahead[10].
-This strategy trains first a one step model then uses it recursively for returning a multistep prediction.
-The deficiency of this strategy is its sensitivity to the estimation error, since estimated values, instead of actual ones, are more and more used when we get further in the future.
+
+Recursive strategy is the oldest and most intuitive strategy to forecast a time series multiple steps ahead[^7]. This strategy trains first a one step model then uses it recursively for returning a multistep prediction. The deficiency of this strategy is its sensitivity to the estimation error, since estimated values, instead of actual ones, are more and more used when we get further in the future.
 
 2. Direct strategy
-Direct strategy consists of forecasting each horizon independently from the others. 
-This strategy does not use any approximated values to compute the forecasts, being then immune to the accumulation of errors. 
-However, the models are learned independently inducing a conditional independence of the H forecasts. 
+
+Direct strategy consists of forecasting each horizon independently from the others. This strategy does not use any approximated values to compute the forecasts, being then immune to the accumulation of errors. However, the models are learned independently inducing a conditional independence of the H forecasts. 
+
 This affects the forecasting accuracy as it prevents the strategy from considering complex dependencies between the variables
 Unfortunately, this strategy demands a large computational time since there are as many models to learn as the size of the horizon.
 
-
 3. DirRec strategy
+
 The DirRec strategy combines the architectures and the principles underlying the Direct and the Recursive strategies. DirRec computes the forecasts with different models for every horizon (like the Direct strategy) and, at each time step, it enlarges the set of inputs by adding variables corresponding to the forecasts of the previous step (like the Recursive strategy). However, note that unlike the two previous strategies, the embedding size n is not the same for all the horizons.
 
-4. Multiple output strategies
-  a. MIMO Strategy
-      The Multi-Input Multi-Output (MIMO) strategy (also known as Joint strategy [9]) avoids the simplistic assumption of conditional independence between future values made by the Direct strategy by learning a single multiple-output model.The rationale of the MIMO strategy is to model, between the predicted values, the stochastic dependency characterizing the time series. This strategy avoids the conditional independence assumption made by the direct strategy as well as the accumulation of errors which plagues the recursive strategy.
-   b. DIRMO Strategy
-      The DIRMO strategy [10,9] aims to preserve the most appealing aspects of DIRect and MIMO strategies by partitioning the horizon H in several blocks, and using MIMO to forecast the values inside each Machine Learning Strategies for Time Series Forecasting block.
+4. Multiple output strategies [^8]
+
+a. **MIMO Strategy**
+  
+The Multi-Input Multi-Output (MIMO) strategy avoids the simplistic assumption of conditional independence between future values made by the Direct strategy by learning a single multiple-output model.The rationale of the MIMO strategy is to model, between the predicted values, the stochastic dependency characterizing the time series. This strategy avoids the conditional independence assumption made by the direct strategy as well as the accumulation of errors which plagues the recursive strategy.
+
+b. **DIRMO Strategy**
+
+The DIRMO strategy aims to preserve the most appealing aspects of DIRect and MIMO strategies by partitioning the horizon H in several blocks, and using MIMO to forecast the values inside each Machine Learning Strategies for Time Series Forecasting block.
 
 Overall, All these strategies learn the dependency between the past and the future in different manners by making specific assumptions. 
 
 ## The purpose of `forecastML`
-In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. 
-The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[2]
-Benefits of using this package to modeling multiple time series in one go with a single model or ensemble of models include[5]
-(a) modeling simplicity
-(b) potentially more robust results from pooling data across time series 
-(c) solving the cold-start problem when few data points are available for a given time series.
+
+In this project, we are using package `forecastML` to perform Time Series Forecasting with Machine Learning methods. The purpose of `forecastML` is to simplify the process of multi-step-ahead forecasting with standard machine learning algorithms. `forecastML` supports lagged, dynamic, static, and grouping features for modeling single and grouped numeric or factor/sequence time series. 
+
+In addition, simple wrapper functions are used to support model-building with most R packages. This approach to forecasting is inspired by Bergmeir, Hyndman, and Koo's (2018) paper entitled "A note on the validity of cross-validation for evaluating autoregressive time series prediction"[^2].
+
+Benefits of using this package to modeling multiple time series in one go with a single model or ensemble of models include[^5]:
+
+- modeling simplicity
+
+- potentially more robust results from pooling data across time series 
+
+- solving the cold-start problem when few data points are available for a given time series.
 
 
 ## Learning Objectives
@@ -112,59 +109,117 @@ library(forecastML)
 # Data Preprocess using `forecastML`
 
 ## Lagged Features
+
 Lag features are the classical way that time series forecasting problems are transformed into supervised learning problems.
-The simplest approach is to predict the value at the next time (t+1) given the value at the previous time (t-1)[3].
+The simplest approach is to predict the value at the next time (t+1) given the value at the previous time (t-1)[^3].
 
 ## Nested cross validation
+
 A nested cross-validation procedure provides an almost unbiased estimate of the true error (Varma and Simon 2006). 
-There are two methods for nested CV with data from multiple time series :
+There are two methods for nested CV with data from multiple time series[^6]:
+
 (1) Regular
+
 For “regular” nested cross-validation, the basic idea of how the train/validation/test splits are made is the same as before.
 The only change is that the splits now contain data from each participant in our dataset.
-For instance, if there are two participants, Participant A and B, the training set would contain the data from the first half of days from Participant A and the data from the first half of days from Participant B. Likewise, the testing set would contain the second half of days for each participant[6].
+For instance, if there are two participants, Participant A and B, the training set would contain the data from the first half of days from Participant A and the data from the first half of days from Participant B. Likewise, the testing set would contain the second half of days for each participant.
 
 (2) Population-Informed
+
 For “population-informed nested cross-validation” we take advantage of the independence between different participants’ data. 
 This allows us to break the strict temporal ordering, at least between individuals’ data (it is still necessary within an individual’s data). 
-Because of this independence, we can slightly modify the regular nested cross-validation algorithm. 
-Now the test and validation sets only contain data from one participant, say Participant A, and all data from all other participants in the dataset are allowed in the training set. 
-See Figure 1 for a visual of how this works for population-informed Day Forward-Chaining nested cross-validation. 
-The figure shows that Participant A’s 18th day is the testing set (colored red), the previous three days are the validation set (colored yellow), and the training set (colored green) contains all the previous data from Participant A, as well as all the data from the rest of the participants (B, C, D, and E in this example).
-The important thing to emphasize is that there is no data leakage from using “future” observations from the other participants precisely due to the independence of these participants’ time series[6].
+
+Because of this independence, we can slightly modify the regular nested cross-validation algorithm.  Now the test and validation sets only contain data from one participant, say Participant A, and all data from all other participants in the dataset are allowed in the training set. See Figure 1 for a visual of how this works for population-informed Day Forward-Chaining nested cross-validation. 
 
 
-# Model Training
-
-## XGBoost
-XGBoost is an optimized distributed gradient boosting library designed to be highly efficient, flexible and portable[4]. 
-It implements machine learning algorithms under the Gradient Boosting framework.
-XGBoost provides a parallel tree boosting (also known as GBDT, GBM) that solve many data science problems in a fast and accurate way. 
-The same code runs on major distributed environment (Hadoop, SGE, MPI) and can solve problems beyond billions of examples.
-
-## ....
-
-# Model Performance #ragu......
-It can be seen from the result above that by using xgboost algorithm with default parameters, it provides the best result when apllied to horizon 1 because ..... the forecast values are more visibly accurate to the actual values than horizon 7.
-Therefore, we will do forecasting along the timeframe in horizon 1.
-
-# Conslusion.......
-
-
-# Reference
-- [1] https://www.analyticsvidhya.com/blog/2018/09/multivariate-time-series-guide-forecasting-modeling-python-codes/ 
-- [2] https://cran.r-project.org/web/packages/forecastML/index.html
-- Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
-Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
-- [3] https://machinelearningmastery.com/basic-feature-engineering-time-series-data-python/ 
-- [4] https://xgboost.readthedocs.io/en/latest/
-- [5] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
-- [6] https://medium.com/@soumyachess1496/cross-validation-in-time-series-566ae4981ce4
-
-
-## Hotel
+# Case Example: Hotel Booking Demand
 
 ```{r}
-hotel <- read_csv("data/hotel_bookings.csv") %>% 
+hotel <- read_csv("data/hotel_bookings.csv")
+head(hotel)
+```
+
+The data contains 119390 observations and  32 variables. Here some description of each feature:
+
+- `hotel`: Hotel (H1 = Resort Hotel or H2 = City Hotel)  
+
+- `is_canceled`: Value indicating if the booking was canceled (1) or not (0)    
+
+- `lead_time`: Number of days that elapses between the entering date of the booking into the PMS and the arrival date  
+
+- `arrival_date_year`: Year of arrival date    
+
+- `arrival_date_month`: Month of arrival data    
+
+- `arrival_date_week_number`: Week number of year for arrival date    
+
+- `arrival_date_day_of_month`: Day of arrival date    
+
+- `stays_in_weekend_nights`: Number of week nights (Monday to Friday) the guest stayed or booked to stay at the hotel
+
+- `adults`: Number of adults
+
+- `children`: Number of children
+
+- `babies`: Number of babies
+
+- `meal`: Type of meal booked. Categories are presented in standard hospitality meal packages:
+    - Undefined/SC : no meal package;
+    - BB : Bed & Breakfast;
+    - HB : Half board (breakfast and one other meal-usually dinner);
+    - FB : Full board (breakfast, lunch, and dinner)
+
+- `country`: Country of origin. Categories are represented in the ISO 3155-3:2013 format
+
+- `market_segment`: Market segment designation. In categories, the term "TA" means "Travel agents" and "TO" means "Tour Operators"
+
+- `distribution_channel`: Booking distribution channel. The term "TA" means "Travel Agents" and "TO" means "Tour Operators"
+
+- `is_repeated_guest`: Value indicating if the booking name was from a repeated guest (1) or not (0)
+
+- `previous_cancellations`: Number of previous bookings that were cancelled bu the customer prior to the current booking
+
+- `previous_bookings_not_canceled`: Number of previous bookings not cancelled by the customer prior to the current booking
+
+- `reserved_room_type`: Code of room type reserved. Code is represented instead of designation for anonymity reasons
+
+- `assigned_room_type`: Code for the type of room assigned to the booking. Sometimes the assigned room type differs from the reserved room type due to hotel opeartions reasons (e.g overbooking) or by customer request. Code is presented instead of designation for anonymity reasons
+
+- `booking_changes`: Number of changes/amendments made to the booking from the moment the booking was entered on the PMS until the moment of check-in cancellation
+
+- `deposit_type`: Indication on if the customer made a deposit to guarantee the booking. This variable can assume three categories:
+    - No deposit - no deposit was made;
+    - Non refund - a deposit was made in the value of the total stay cost;
+    - Refundable - a deposit was made with a value under the total cost of stay
+
+- `agent`: ID of the travel agency that made the booking
+
+- `company`: ID of the company/entity that made the booking or responsible for paying the booking. ID is presented instad of designation for anonymity reasons
+
+- `days_in_waiting_list`: Number of days the booking was in the waiting list before it was confirmed to the customer
+
+- `customer_type`: Type of booking, assuming one of four categories:
+    - Contract - when the booking has an allotment or other type of contract associated to it;
+    - Group - when the booking is associated to a group;
+    - Transient - when the booking is not part of a group or contract, and is not associated to other transient booking
+    - Transient-party - when the booking is transient, but is associated to at least other transient booking
+
+- `adr`: Average daily rate as defined by dividing the sum of all lodging transactions by the total number of staying nights
+
+- `required_car_parking_spaces`: Number of car parking spaces required by the customer
+
+- `total_of_special_requests`: Number of special requests made by the customer (e.g. twin bed or high floor)
+
+- `reservation_status`: Reservation las status, assuming one of three categories:
+  - Canceled - booking was canceled by the customer;
+  - Check-out - customer has checked in but already departed;
+  - No-Show - customer did not check-in and did inform the hotel of the reason why
+
+- `reservation_status_date`: Date a which the last status was set. This variable can be used in conjuction with the reservation status to understand when was the booking canceled or when did the customer checked-out of the model.
+
+The forecasting model will help both city hotel and resort hotel to get maximum revenue with predict number of demand.  Next, we do preprocess to get demand variable with several steps.
+```{r}
+hotel_clean <- hotel %>% 
          mutate_if(is.character, as.factor) %>% 
          unite("arrival_date", arrival_date_year, 
                arrival_date_month, 
@@ -175,54 +230,36 @@ hotel <- read_csv("data/hotel_bookings.csv") %>%
          group_by(arrival_date, hotel) %>% 
          summarise(demand = n()) %>% 
          ungroup()
-head(hotel)
-
+head(hotel_clean)
 ```
 
 ```{r}
-hotel_clean <- hotel %>% 
+hotel_clean <- hotel_clean %>% 
   filter(demand < 200)
 ```
 
+Package forecastML have `fill_gaps()` to fill rows for the missing dates. Fill gaps in data collection and prepare a dataset of evenly-spaced time series for modeling with lagged features.
 ```{r}
-hotel_clean2 <- fill_gaps(hotel_clean, 
+data_hotel <- fill_gaps(hotel_clean, 
                           date_col = 1, 
                           frequency = "1 day",
                            groups = "hotel")
 ```
 Let's see if we have missing dates:
 ```{r}
-nrow(hotel_clean)
-nrow(hotel_clean2)
-
-colSums(is.na(hotel_clean2))
+colSums(is.na(data_hotel))
 ```
-
-```{r}
-library(tidyr)
-hotel_clean2 <- hotel_clean2 %>% 
-                fill(demand, .direction = "updown")
-colSums(is.na(hotel_clean2))
-```
+We don't have missing dates because the result didn't show NA values.
 
 Now we can visualize data by hotel types from the train dataset.
 ```{r}
 # visualize train
-ggplot(hotel_clean2, aes(x = arrival_date, y = demand)) +
+ggplot(data_hotel, aes(x = arrival_date, y = demand)) +
   geom_line() +
-  facet_wrap(~ hotel, ncol = 2, scales = "free")+
+  facet_wrap(~ hotel, ncol = 1, scales = "free")+
   labs(title = "Weekly Sales by Store (Train Dataset)", x = NULL, y = NULL, colour = NULL)+
   tidyquant::theme_tq()
 ```
-
-Package forecastML have `fill_gaps()` to fill rows for the missing dates.
-```{r}
-data_hotel <- forecastML::fill_gaps(hotel_clean2, 
-                                      date_col = 1,
-                                      frequency = "1 day", 
-                                      groups = "hotel")
-```
-
 
 
 splitting into data train and data test
@@ -238,7 +275,7 @@ test <- data_hotel %>%
 ```
 
 
-The number observation of `data_clean` and `data walmart the have same number. So we can say that we don't have missing dates. Next, we will create model training with lagged
+Next, we will create model training with lagged.
 
 ```{r}
 data_train <- forecastML::create_lagged_df(data_hotel, 
@@ -373,10 +410,6 @@ data_pred_test <- predict(model_results, prediction_function = list(prediction_f
 
 ```
 
-```{r}
-test
-```
-
 
 ```{r}
 pred_test <- data_pred_test %>% 
@@ -394,3 +427,33 @@ ggplot(pred_test, aes(x = arrival_date, y = value))+
   facet_grid(hotel~model_forecast_horizon, scales = "free",)+
   tidyquant::theme_tq()
 ```
+
+## XGBoost
+XGBoost is an optimized distributed gradient boosting library designed to be highly efficient, flexible and portable[4]. 
+It implements machine learning algorithms under the Gradient Boosting framework.
+XGBoost provides a parallel tree boosting (also known as GBDT, GBM) that solve many data science problems in a fast and accurate way. 
+The same code runs on major distributed environment (Hadoop, SGE, MPI) and can solve problems beyond billions of examples.
+
+## ....
+
+# Model Performance 
+It can be seen from the result above that by using xgboost algorithm with default parameters, it provides the best result when apllied to horizon 1 because ..... the forecast values are more visibly accurate to the actual values than horizon 7.
+Therefore, we will do forecasting along the timeframe in horizon 1.
+
+# Conslusion.......
+
+
+# Reference
+- [^1] https://www.analyticsvidhya.com/blog/2018/09/multivariate-time-series-guide-forecasting-modeling-python-codes/ 
+- [^2] https://cran.r-project.org/web/packages/forecastML/index.html
+- Sseguya, Raymond. Forecasting anomalies in time series data from online production environments. In: Department of Computer and Information Science
+Master’s thesis, 30 ECTS (2020). http://www.diva-portal.org/smash/get/diva2:1436042/FULLTEXT01.pdf
+- [^3] https://machinelearningmastery.com/basic-feature-engineering-time-series-data-python/ 
+- [^4] https://xgboost.readthedocs.io/en/latest/
+- [^5] https://cran.r-project.org/web/packages/forecastML/vignettes/grouped_forecast.html
+- [^6] https://medium.com/@soumyachess1496/cross-validation-in-time-series-566ae4981ce4
+- [^7] Taieb, Souhaib Ben & Bontempi, Gianluca. 2011. "Recursive Multi-step Time Series Forecasting by Perturbing Data".
+- [^8] Aufaure, Marie Aude & Zimanyi Esteban. 2013. "Business Intelligence: Second European Summer School".
+
+
+
