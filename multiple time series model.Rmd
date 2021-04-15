@@ -46,7 +46,7 @@ Multiple time series data of the kind described may be available in different lo
 
 One of the methods to conduct this multiple time series forecasting is to use machine learning model. By using the machine learning method, we should transform the data so that it can be processed by supervised learning using various regression algorithm.
 
-There are four strategies for multiple time series forescasting :
+There are four strategies for multiple time series forecasting :
 
 1. Recursive strategy
 
@@ -120,14 +120,11 @@ There are two methods for nested CV with data from multiple time series[^6]:
 
 (1) Regular
 
-For “regular” nested cross-validation, the basic idea of how the train/validation/test splits are made is the same as before.
-The only change is that the splits now contain data from each participant in our dataset.
-For instance, if there are two participants, Participant A and B, the training set would contain the data from the first half of days from Participant A and the data from the first half of days from Participant B. Likewise, the testing set would contain the second half of days for each participant.
+For “regular” nested cross-validation, the basic idea of how the train/validation/test splits are made is the same as before. The only change is that the splits now contain data from each participant in our dataset. For instance, if there are two participants, Participant A and B, the training set would contain the data from the first half of days from Participant A and the data from the first half of days from Participant B. Likewise, the testing set would contain the second half of days for each participant.
 
 (2) Population-Informed
 
-For “population-informed nested cross-validation” we take advantage of the independence between different participants’ data. 
-This allows us to break the strict temporal ordering, at least between individuals’ data (it is still necessary within an individual’s data). 
+For “population-informed nested cross-validation” we take advantage of the independence between different participants’ data. This allows us to break the strict temporal ordering, at least between individuals’ data (it is still necessary within an individual’s data). 
 
 Because of this independence, we can slightly modify the regular nested cross-validation algorithm.  Now the test and validation sets only contain data from one participant, say Participant A, and all data from all other participants in the dataset are allowed in the training set. See Figure 1 for a visual of how this works for population-informed Day Forward-Chaining nested cross-validation. 
 
@@ -177,7 +174,7 @@ The data contains 119390 observations and  32 variables. Here some description o
 
 - `is_repeated_guest`: Value indicating if the booking name was from a repeated guest (1) or not (0)
 
-- `previous_cancellations`: Number of previous bookings that were cancelled bu the customer prior to the current booking
+- `previous_cancellations`: Number of previous bookings that were cancelled by the customer prior to the current booking
 
 - `previous_bookings_not_canceled`: Number of previous bookings not cancelled by the customer prior to the current booking
 
@@ -233,11 +230,6 @@ hotel_clean <- hotel %>%
 head(hotel_clean)
 ```
 
-```{r}
-hotel_clean <- hotel_clean %>% 
-  filter(demand < 200)
-```
-
 Package forecastML have `fill_gaps()` to fill rows for the missing dates. Fill gaps in data collection and prepare a dataset of evenly-spaced time series for modeling with lagged features.
 ```{r}
 data_hotel <- fill_gaps(hotel_clean, 
@@ -251,6 +243,7 @@ colSums(is.na(data_hotel))
 ```
 We don't have missing dates because the result didn't show NA values.
 
+
 Now we can visualize data by hotel types from the train dataset.
 ```{r}
 # visualize train
@@ -262,7 +255,7 @@ ggplot(data_hotel, aes(x = arrival_date, y = demand)) +
 ```
 
 
-splitting into data train and data test
+Splitting into data train and data test
 ```{r}
 train <- data_hotel %>% 
               group_by(hotel) %>% 
@@ -275,7 +268,7 @@ test <- data_hotel %>%
 ```
 
 
-Next, we will create model training with lagged.
+Next, we will create model training with lagged values for each forecast horizon. Parameter `lookback` specifies the predictor lags in dataset rows.
 
 ```{r}
 data_train <- forecastML::create_lagged_df(data_hotel, 
@@ -288,7 +281,6 @@ data_train <- forecastML::create_lagged_df(data_hotel,
                                            dynamic_features = c("day","week"),
                                            groups = "hotel"
                                            )
-head(data_train)
 ```
 
 
@@ -303,9 +295,7 @@ data_test <- forecastML::create_lagged_df(train,
                                            dynamic_features = c("day","week"),
                                            groups = "hotel"
                                            )
-head(data_test)
 ```
-
 
 ```{r}
 plot(data_train)
@@ -361,7 +351,7 @@ model <- xgboost::xgb.train(data = dtrain,
 ```
 
 
-```{r}
+```{r, results='hide'}
 model_results <- forecastML::train_model(lagged_df = data_train,
                                             windows = windows,
                                             model_name = "xgboost",
@@ -437,10 +427,10 @@ The same code runs on major distributed environment (Hadoop, SGE, MPI) and can s
 ## ....
 
 # Model Performance 
-It can be seen from the result above that by using xgboost algorithm with default parameters, it provides the best result when apllied to horizon 1 because ..... the forecast values are more visibly accurate to the actual values than horizon 7.
+It can be seen from the result above that by using xgboost algorithm with default parameters, it provides the best result when applied to horizon 1 because ..... the forecast values are more visibly accurate to the actual values than horizon 7.
 Therefore, we will do forecasting along the timeframe in horizon 1.
 
-# Conslusion.......
+# Conslusion
 
 
 # Reference
